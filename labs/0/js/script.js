@@ -9,12 +9,12 @@ const extTXT = "-txt";
 
 // html ids
 const mainDiv = "main";
-const promptDiv = "prompt";
+const promptDiv = "form-div";
 const gameDiv = "game";
-const formDiv = "gameForm";
-const questionLabel = "question";
-const submitLabel = "submitButton";
-const numButtonsLabel = "numOfButtons";
+const formDiv = "game-form";
+const questionLabel = "form-label";
+const submitLabel = "submit-btn";
+const numButtonsLabel = "num-btns";
 
 // events
 const eventClick = "click";
@@ -115,7 +115,7 @@ class Game {
 
     endGame() {
         this.initGame();
-        document.getElementById(promptDiv).style.display = "flex";
+        document.getElementById(promptDiv).style.display = "block";
         document.getElementById(gameDiv).innerHTML = "";
     }
 
@@ -165,13 +165,13 @@ class Game {
         
         if (currentIndex === this.numButtons) {
             setTimeout(() => {
-                alert(messages.winMessage);
+                alert(messages.winMsg);
                 this.endGame();
             }, endInterval);
         } else if (currentIndex != btn.id) {
             this.displayText();
             setTimeout(() => {
-                alert(messages.wrongMessage);
+                alert(messages.loseMsg);
                 this.endGame();
             }, endInterval);
         }
@@ -220,8 +220,8 @@ class UI {
     }
 
     initUI() {
-        document.getElementById(questionLabel).innerHTML = messages.inputPrompt;
-        document.getElementById(submitLabel).innerHTML = messages.gameStartBtn;
+        document.getElementById(questionLabel).innerHTML = messages.inputMsg;
+        document.getElementById(submitLabel).innerHTML = messages.submitBtn;
         document.getElementById(formDiv).addEventListener(eventSubmit, (e) => this.handleSubmit(e));
     }
 
@@ -237,9 +237,10 @@ class UI {
         const input = document.getElementById(numButtonsLabel);
         const n = input.value;
         if (this.validateInput(n)) {
+            input.value = ""; // clear input box
             this.game.startGame(n);
         } else {
-            alert(messages.promptError);
+            alert(messages.errorMsg);
         }
     }
 }
