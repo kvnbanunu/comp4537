@@ -26,8 +26,8 @@ const timeBetweenMoves = 2000; // 2 seconds
 const minButtons = 3;
 const maxButtons = 7;
 
+// This class handles the text label for each button.
 class ButtonText {
-
     constructor(id) {
         this.id = id;
         this.elemID = id + extTXT;
@@ -74,6 +74,8 @@ class Button {
         this.top = top;
         this.left = left;
         const btnElem = document.getElementById(this.elemID);
+
+        // need this after init or else buttons overlap at the beginning.
         btnElem.style.position = "absolute";
         btnElem.style.top = this.top + extPX;
         btnElem.style.left = this.left + extPX;
@@ -118,6 +120,7 @@ class Game {
     }
 
     randomColor() {
+        // This snippet is from chatgpt.
         return "#" + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, "0");
     }
 
