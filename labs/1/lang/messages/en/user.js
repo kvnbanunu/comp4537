@@ -1,5 +1,9 @@
 const TEXT = {
     timeStored: "stored at: ",
     timeUpdated: "updated at: ",
-    addBtn: "add"
+    backBtn: "back",
+    writerBtn: "writer",
+    readerBtn: "reader",
+    addBtn: "add",
+    removeBtn: "remove"
 }
