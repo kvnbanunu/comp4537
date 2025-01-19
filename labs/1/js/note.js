@@ -1,6 +1,8 @@
+const eventEdit = "input";
+const eventRemove = "click";
+
 class Note {
-    constructor(id, input) {
-        this.id = id;
+    constructor(input) {
         this.txt = input;
     }
 }
@@ -22,10 +24,7 @@ class Notebook {
     }
 
     update() {
+        this.notes = JSON.parse(localStorage.getItem("notes"));
         localStorage.setItem("timestamp", (new Date(Date.now)).toLocaleTimeString("en-US"));
-    }
-
-    display() {
-        // abstract
     }
 }
