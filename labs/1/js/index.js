@@ -176,6 +176,7 @@ class Reader {
     refresh() {
         document.getElementById(ELEM_ID.divs.notes).innerHTML = "";
         this.notebook.getStoredNotes();
+        this.notebook.getStoredTimestamp();
         this.renderTimestamp();
         this.renderNotebook();
     }
