@@ -37,12 +37,12 @@ const PATHS = {
 
 class Notebook {
     constructor() {
-        this.notes = this.getStoredNotes();
+        this.getStoredNotes();
         this.getStoredTimestamp();
     }
 
     getStoredNotes() {
-        return JSON.parse(localStorage.getItem(STORAGE.notes)) || [0];
+        this.notes = JSON.parse(localStorage.getItem(STORAGE.notes)) || [];
     }
 
     getStoredTimestamp() {
@@ -156,7 +156,11 @@ class Reader {
         this.notebook = new Notebook();
         this.renderTimestamp();
         this.renderNotebook();
-        window.addEventListener(EVENTS.storage, () => this.refresh());
+        window.addEventListener(EVENTS.storage, (e) => {
+            if (e.key === STORAGE.notes) {
+                this.refresh();
+            }
+        });
     }
 
     renderTimestamp() {
