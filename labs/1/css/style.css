@@ -1,0 +1,16 @@
+.btn {
+    width: 100px;
+    margin: 10px;
+}
+
+.writer-note-block {
+    padding-bottom: 1em;
+}
+
+.reader-note-block {
+    padding-bottom: 1em;
+}
+
+#note-list {
+    padding: 1em;
+}
