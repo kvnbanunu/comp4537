@@ -45,7 +45,6 @@ http.createServer((req, res) => {
                 const params = JSON.parse(query);
                 const word = params.word;
                 const def = params.definition;
-                contype = CONTENT.text;
                 result = dictionary.add(word, def, reqno);
             });
         } else {
