@@ -45,8 +45,17 @@ http.createServer((req, res) => {
                 const params = JSON.parse(query);
                 const word = params.word;
                 const def = params.definition;
+                contype = CONTENT.text;
                 result = dictionary.add(word, def, reqno);
+
+                res.writeHead(resCode, {
+                    'Content-Type': contype,
+                    'Access-Control-Allow-Origin': '*'
+                });
+                res.write(result);
+                res.end();
             });
+            return;
         } else {
             resCode = 400;
             contype = CONTENT.html;

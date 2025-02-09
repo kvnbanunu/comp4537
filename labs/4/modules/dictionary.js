@@ -13,23 +13,24 @@ class Dictionary {
     
     add(word, definition, reqno) {
         const lower = word.toLowerCase();
-        let res = '';
+//        let res = '';
         if (this.records.get(lower) != undefined) {
-//            return `Request #${reqno}\nWarning! Word: '${word}' already exits.`;
-            res = {
+            return `Request #${reqno}\nWarning! Word: '${word}' already exits.`;
+/*            res = {
                 "reqnum": reqno,
-                "result": "Warning! Word already exists",
+                "result": `Warning! The entry ${word} already exists`,
                 "dictlen": this.getLength()
             }
+            */
         }
         this.records.set(lower, definition);
-        res = {
+/*        res = {
             "reqnum": reqno,
-            "result": "Successfully added record to dictionary",
+            "result": `Successfully added ${word} to dictionary`,
             "dictlen": this.getLength()
-        }
-//        return `Request #${reqno}\nSuccessfully added record #${this.getLength()}: ${word}`;
-        return JSON.stringify(res);
+        } */
+        return `Request #${reqno}\nSuccessfully added record #${this.getLength()}: ${word}`;
+//        return JSON.stringify(res);
     }
 
     getLength() {
