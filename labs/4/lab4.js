@@ -4,7 +4,7 @@ const dictionary = require('./modules/dictionary').dictionary;
 
 const PORT = 8081;
 
-const PATH = '/labs/4/definitions';
+const PATH = 'definitions';
 
 const CONTENT = {
     json: "application/json",

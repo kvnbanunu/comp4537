@@ -5,9 +5,9 @@ const utils = require('./modules/utils');
 const TEXT = require('./locals/en/en').TEXT;
 
 const PATHS = {
-    GET_DATE: '/labs/3/getDate/',
-    WRITE_FILE: '/labs/3/writeFile/',
-    READ_FILE: '/labs/3/readFile/'
+    GET_DATE: 'getDate/',
+    WRITE_FILE: 'writeFile/',
+    READ_FILE: 'readFile/'
 };
 const FILE = 'file.txt';
 
