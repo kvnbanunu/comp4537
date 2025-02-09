@@ -4,7 +4,10 @@ const dictionary = require('./modules/dictionary').dictionary;
 
 const PORT = 8081;
 
-const PATH = 'definitions';
+const PATHS = {
+    base:'definitions',
+    clear:'clear'
+};
 
 const CONTENT = {
     json: "application/json",
@@ -21,7 +24,7 @@ http.createServer((req, res) => {
     let contype = CONTENT.json;
     reqno++;
 
-    if (q.pathname === PATH) {
+    if (q.pathname === PATHS.base) {
         if (req.method === "GET") {
             result = dictionary.search(q.query.word);
         } else if (req.method === "POST") {
@@ -47,6 +50,11 @@ http.createServer((req, res) => {
             contype = CONTENT.html;
             result = `<h1>${resCode} Bad Request</h1>`;
         }
+    } else if (q.pathname === PATHS.clear) {
+        dictionary.clear();
+        reqno = 0;
+        contype = CONTENT.html;
+        result = `<h1>Cleared the dictionary and request count.</h1>`;
     } else {
         resCode = 404;
         contype = CONTENT.html;
