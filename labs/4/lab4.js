@@ -18,6 +18,15 @@ const CONTENT = {
 let reqno = 0;
 
 http.createServer((req, res) => {
+    if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        });
+        res.end();
+        return;
+    }
     let q = url.parse(req.url, true);
     let result = '';
     let resCode = 200;
@@ -28,23 +37,17 @@ http.createServer((req, res) => {
         if (req.method === "GET") {
             result = dictionary.search(q.query.word);
         } else if (req.method === "POST") {
-            if (req.headers["access-control-request-method"]) {
-                res.setHeader("Access-Control-Allow-Origin", "*");
-                res.setHeader("Access-Control-Allow-Methods", "POST");
-                res.end();
-            } else {
-                let query = "";
-                req.on("data", function(chunk) {
-                    query += chunk;
-                });
-                req.on("end", function() {
-                    const params = JSON.parse(query);
-                    const word = params.word;
-                    const def = params.definition;
-                    contype = CONTENT.text;
-                    result = dictionary.add(word, def, reqno);
-                });
-            }
+            let query = "";
+            req.on("data", function(chunk) {
+                query += chunk;
+            });
+            req.on("end", function() {
+                const params = JSON.parse(query);
+                const word = params.word;
+                const def = params.definition;
+                contype = CONTENT.text;
+                result = dictionary.add(word, def, reqno);
+            });
         } else {
             resCode = 400;
             contype = CONTENT.html;
