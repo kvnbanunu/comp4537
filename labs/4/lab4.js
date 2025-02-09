@@ -5,8 +5,8 @@ const dictionary = require('./modules/dictionary').dictionary;
 const PORT = 8081;
 
 const PATHS = {
-    base:'definitions',
-    clear:'clear'
+    base:'/definitions',
+    clear:'/clear'
 };
 
 const CONTENT = {
