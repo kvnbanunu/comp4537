@@ -1,12 +1,11 @@
 const http = require('http');
 const url = require('url');
-const db = require('./modules/database');
-const TEXT = require('./modules/text').messages;
-const PORT = 8082;
+const mysql = require('mysql');
+const TEXT = require('./modules/text');
+const DBFUNC = require('./modules/database');
+require('dotenv').config();
 
-const PATHS = {
-    base: "/sql"
-}
+const PATH = '/sql';
 
 const CONTENT = {
     json: "application/json",
@@ -16,157 +15,145 @@ const CONTENT = {
 
 const RESCODE = {
     success: 200,
+    created: 201,
+    noCont: 204,
     badReq: 400,
-    notFound: 404
+    notFound: 404,
+    notAllowed: 405,
+    intErr: 500
 }
 
-// This function is used to parse the array sent from client
-function createInsertQuery(personData) {
-    const values = personData.map(person => 
-        `('${person.name}', '${person.date}')`
-    ).join(', ');
+const db = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE
+});
 
-    return `INSERT INTO patient (name, dateOfBirth) VALUES ${values}`;
-}
-
-function renderTable(results) {
-    if (!results || results.length === 0) {
-        return '<p>No results found</p>';
+db.connect((err) => {
+    if (err) {
+        console.error('Error connecting to MySQL:', err);
+        return;
     }
-    const headers = Object.keys(results[0]);
-    let html = `
-    <table>
-        <thead>
-            <tr>
-                ${headers.map(header => `<th>${header}</th>`).join('')}
-            </tr>
-        </thead>
-        <tbody>
-    `;
+    console.log('Connected to MySQL database');
+});
 
-    results.forEach(row => {
-        html += '<tr>';
-        headers.forEach(header => {
-            html += `<td>${row[header]}</td>`;
-        });
-        html += '</tr>';
-    });
+const server = http.createServer(async (req, res) => {
+    const parsed = url.parse(req.url, true);
+    const path = parsed.pathname;
+    const query = parsed.query;
 
-    html += `
-            </tbody>
-        </table>
-    `;
-    return html;
-}
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-http.createServer(async (req, res) => {
-    if (req.method === "OPTIONS") {
-        res.writeHead(204, {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type"
-        });
+    if (req.method === 'OPTIONS') {
+        res.writeHead(RESCODE.noCont);
         res.end();
         return;
     }
-    const q = url.parse(req.url, true);
-    let resCode = RESCODE.success;
-    let contype = CONTENT.json;
-    let result = "";
-    
-    if (q.pathname === PATHS.base) {
-        if (req.method === "GET") {
-            const sqlQuery = q.query.query;
 
-            if (!sqlQuery) {
-                resCode = RESCODE.badReq;
-                res.writeHead(resCode, {
-                    "Content-Type": contype,
-                    "Access-Control-Allow-Origin": "*"
-                });
-                res.end(JSON.stringify({
-                    error: TEXT.noQuery
-                }));
-                return;
+    if (path === PATH) {
+        try {
+            if (req.method === 'GET') {
+                handleGetReq(req, res, query);
+            } else if (req.method === 'POST') {
+                await handlePostReq(req, res);
+            } else {
+                sendError(res, RESCODE.notAllowed, TEXT.notAllowed);
             }
-
-            try {
-                const response = await db.executeQuery(sqlQuery);
-                contype = CONTENT.html;
-                res.writeHead(resCode, {
-                    "Content-Type": contype,
-                    "Access-Control-Allow-Origin": "*"
-                });
-                res.end(renderTable(response.results));
-            } catch (error) {
-                contype = CONTENT.html;
-                res.writeHead(resCode, {
-                    "Content-Type": contype,
-                    "Access-Control-Allow-Origin": "*"
-                });
-                res.end(`<h1>Error: ${error.message}</h1>`);
-            }
-            return;
-        } else if (req.method === "POST") {
-            let data = '';
-            req.on('data', chunk => {
-                data += chunk;
-            });
-            
-            req.on('end', async () => {
-                try {
-                    const reqData = JSON.parse(data);
-                    let response;
-                    let query;
-
-                    if (req.method === "POST" && Array.isArray(reqData)) { // Handle the repeat query
-                        query = createInsertQuery(reqData);
-                    } else if (reqData.query){ // handle custom query
-                        query = reqData.query;
-                    } else {
-                        response = { error: TEXT.invReq };
-                        resCode = RESCODE.badReq;
-                    }
-                    
-                    if (query) {
-                        try {
-                            response = await db.executeQuery(query);
-                        } catch (error) {
-                            response = { error: error.message };
-                            resCode = RESCODE.badReq;
-                        }
-                    }
-
-                    res.writeHead(resCode, {
-                        "Content-Type": contype,
-                        "Access-Control-Allow-Origin": "*"
-                    });
-                    res.end(JSON.stringify(response));
-                } catch (e) {
-                    resCode = RESCODE.badReq;
-                    res.writeHead(resCode, {
-                        "Content-Type": contype,
-                        "Access-Control-Allow-Origin": "*"
-                    });
-                    res.end(JSON.stringify({ error: TEXT.invReq }));
-                }
-            });
-            return;
-        } else {
-            resCode = RESCODE.badReq;
-            contype = CONTENT.html;
-            result = `<h1>${TEXT.badReq}</h1>`;
+        } catch (error) {
+            sendError(res, RESCODE.intErr, TEXT.intErr);
         }
     } else {
-        resCode = RESCODE.notFound;
-        contype = CONTENT.html;
-        result = `<h1>${TEXT.notFound}</h1>`;
+        sendError(res, RESCODE.notFound, TEXT.notFound);
+    }
+});
+
+function handleGetReq(req, res, query) {
+    if (!query.query) {
+        sendError(res, RESCODE.badReq, TEXT.badReq);
+        return;
     }
 
-    res.writeHead(resCode, {
-        "Content-Type": contype,
-        "Access-Control-Allow-Origin": "*"
+    if (!DBFUNC.validateQuery(query.query) || DBFUNC.selectOrInsert(query.query) !== 'SELECT') {
+        sendError(res, RESCODE.badReq, TEXT.invQuery);
+        return;
+    }
+
+    db.query(query.query, [], (err, result) => {
+        if (err) {
+            sendError(res, RESCODE.intErr, TEXT.dbErr);
+            return;
+        }
+        sendJSON(res, RESCODE.success, result);
     });
-    res.write(result);
-    res.end();
-}).listen(PORT);
+}
+
+async function handlePostReq(req, res) {
+    const body = await readReqBody(req);
+    if (!body) {
+        sendError(res, RESCODE.badReq, TEXT.invQuery);
+        return;
+    }
+    
+    if (!DBFUNC.validateQuery(body.query) || DBFUNC.selectOrInsert(body.query) !== 'INSERT') {
+        sendError(res, RESCODE.badReq, TEXT.invQuery);
+        return;
+    }
+
+    db.query(body.query, [], (err, result) => {
+        if (err) {
+            sendError(res, RESCODE.intErr, TEXT.dbErr);
+            return;
+        }
+        sendJSON(res, RESCODE.created, { message: TEXT.created, result });
+    });
+}
+
+function readReqBody(req) {
+    return new Promise((resolve, reject) => {
+        let data = '';
+
+        req.on('data', chunk => {
+            data += chunk.toString();
+        });
+
+        req.on('end', () => {
+            try {
+                resolve(JSON.parse(data));
+            } catch (err) {
+                resolve(null);
+            }
+        });
+
+        req.on('error', reject);
+    })
+}
+
+function sendJSON(res, status, data) {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+}
+
+function sendError(res, status, message) {
+    sendJSON(res, status, { error: message });
+}
+
+function shutdown() {
+    server.close(() => {
+        db.end(() => {
+            process.exit(0);
+        });
+    });
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+server.listen(process.env.PORT);
+
+// handle server err
+server.on('error', (error) => {
+    console.error('Server error:', error);
+});
