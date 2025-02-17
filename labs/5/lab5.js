@@ -24,7 +24,7 @@ const db = mysql.createConnection({
     database: process.env.DB_DATABASE
 });
 
-function initDatabase() {
+function initDatabase(callback) {
     const sql = `
         CREATE TABLE IF NOT EXISTS patient (
             patientid INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,10 +35,10 @@ function initDatabase() {
     
     db.query(sql, (err) => {
         if (err) {
-            console.error('Error initializing database:', err);
+            callback(err);
             return;
         }
-        console.log('Database initialized successfully');
+        callback(null);
     });
 }
 
