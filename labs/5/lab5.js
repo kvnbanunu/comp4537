@@ -23,8 +23,9 @@ const db = new sqlite3.Database(process.env.DB_FILE || './database.sqlite', (err
         return;
     }
     console.log('Connected to SQLite database');
-    DBFUNC.initDatabase();
 });
+
+DBFUNC.initDatabase(db);
 
 const server = http.createServer(async (req, res) => {
     const parsed = url.parse(req.url, true);
