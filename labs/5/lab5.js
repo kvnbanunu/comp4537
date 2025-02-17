@@ -29,6 +29,36 @@ function createInsertQuery(personData) {
     return `INSERT INTO patient (name, dateOfBirth) VALUES ${values}`;
 }
 
+function renderTable(results) {
+    if (!results || results.length === 0) {
+        return '<p>No results found</p>';
+    }
+    const headers = Object.keys(results[0]);
+    let html = `
+    <table>
+        <thead>
+            <tr>
+                ${headers.map(header => `<th>${header}</th>`).join('')}
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    results.forEach(row => {
+        html += '<tr>';
+        headers.forEach(header => {
+            html += `<td>${row[header]}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+    return html;
+}
+
 http.createServer(async (req, res) => {
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
@@ -62,17 +92,19 @@ http.createServer(async (req, res) => {
 
             try {
                 const response = await db.executeQuery(sqlQuery);
+                contype = CONTENT.html;
                 res.writeHead(resCode, {
                     "Content-Type": contype,
                     "Access-Control-Allow-Origin": "*"
                 });
-                res.end(JSON.stringify(response));
+                res.end(renderTable(response.results));
             } catch (error) {
+                contype = CONTENT.html;
                 res.writeHead(resCode, {
                     "Content-Type": contype,
                     "Access-Control-Allow-Origin": "*"
                 });
-                res.end(JSON.stringify({ error: error.message }));
+                res.end(`<h1>Error: ${error.message}</h1>`);
             }
             return;
         } else if (req.method === "POST") {
