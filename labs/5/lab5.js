@@ -1,11 +1,17 @@
 const http = require('http');
 const url = require('url');
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql');
 const TEXT = require('./modules/text');
 const DBFUNC = require('./modules/database');
 require('dotenv').config();
 
 const PATH = '/sql';
+
+const CONTENT = {
+    json: "application/json",
+    html: "text/html",
+    text: "text/plain"
+}
 
 const RESCODE = {
     success: 200,
@@ -17,15 +23,21 @@ const RESCODE = {
     intErr: 500
 }
 
-const db = new sqlite3.Database(process.env.DB_FILE || './database.sqlite', (err) => {
-    if (err) {
-        console.error('Error connecting to SQLite database:', err);
-        return;
-    }
-    console.log('Connected to SQLite database');
+const db = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE
 });
 
-DBFUNC.initDatabase(db);
+db.connect((err) => {
+    if (err) {
+        console.error('Error connecting to MySQL:', err);
+        return;
+    }
+    console.log('Connected to MySQL database');
+    initDatabase();
+});
 
 const server = http.createServer(async (req, res) => {
     const parsed = url.parse(req.url, true);
@@ -59,6 +71,24 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
+function initDatabase() {
+    const sql = `
+        CREATE TABLE IF NOT EXISTS patient (
+            patientid INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            dateOfBirth DATETIME NOT NULL
+        )
+    `;
+
+    db.query(sql, [], (err, result) => {
+        if (err) {
+            sendError(res, RESCODE.intErr, TEXT.dbErr);
+            return;
+        }
+        sendJSON(res, RESCODE.success, result);
+    });
+}
+
 function handleGetReq(req, res, query) {
     if (!query.query) {
         sendError(res, RESCODE.badReq, TEXT.badReq);
@@ -70,12 +100,12 @@ function handleGetReq(req, res, query) {
         return;
     }
 
-    db.all(query.query, [], (err, rows) => {
+    db.query(query.query, [], (err, result) => {
         if (err) {
             sendError(res, RESCODE.intErr, TEXT.dbErr);
             return;
         }
-        sendJSON(res, RESCODE.success, rows);
+        sendJSON(res, RESCODE.success, result);
     });
 }
 
@@ -91,18 +121,12 @@ async function handlePostReq(req, res) {
         return;
     }
 
-    db.run(body.query, [], function(err) {
+    db.query(body.query, [], (err, result) => {
         if (err) {
             sendError(res, RESCODE.intErr, TEXT.dbErr);
             return;
         }
-        sendJSON(res, RESCODE.created, { 
-            message: TEXT.created, 
-            result: { 
-                insertId: this.lastID,
-                affectedRows: this.changes 
-            }
-        });
+        sendJSON(res, RESCODE.created, { message: TEXT.created, result });
     });
 }
 
@@ -137,7 +161,7 @@ function sendError(res, status, message) {
 
 function shutdown() {
     server.close(() => {
-        db.close(() => {
+        db.end(() => {
             process.exit(0);
         });
     });
