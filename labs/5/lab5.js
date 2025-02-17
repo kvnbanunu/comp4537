@@ -7,12 +7,6 @@ require('dotenv').config();
 
 const PATH = '/sql';
 
-const CONTENT = {
-    json: "application/json",
-    html: "text/html",
-    text: "text/plain"
-}
-
 const RESCODE = {
     success: 200,
     created: 201,
@@ -29,6 +23,24 @@ const db = mysql.createConnection({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE
 });
+
+function initDatabase() {
+    const sql = `
+        CREATE TABLE IF NOT EXISTS patient (
+            patientid INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            dateOfBirth DATETIME NOT NULL
+        )
+    `;
+    
+    db.query(sql, (err) => {
+        if (err) {
+            console.error('Error initializing database:', err);
+            return;
+        }
+        console.log('Database initialized successfully');
+    });
+}
 
 db.connect((err) => {
     if (err) {
@@ -75,24 +87,6 @@ const server = http.createServer(async (req, res) => {
         sendError(res, RESCODE.notFound, TEXT.notFound);
     }
 });
-
-function initDatabase() {
-    const sql = `
-        CREATE TABLE IF NOT EXISTS patient (
-            patientid INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            dateOfBirth DATETIME NOT NULL
-        )
-    `;
-    
-    db.query(sql, (err) => {
-        if (err) {
-            console.error('Error initializing database:', err);
-            return;
-        }
-        console.log('Database initialized successfully');
-    });
-}
 
 function handleGetReq(req, res, query) {
     if (!query.query) {

@@ -17,26 +17,7 @@ function selectOrInsert(sql) {
     return 'INSERT';
 }
 
-function initDatabase(db) {
-    const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS patient (
-            patientid INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            dateOfBirth DATETIME NOT NULL
-        )
-    `;
-
-    db.run(createTableQuery, (err) => {
-        if (err) {
-            console.error('Error creating table:', err);
-        } else {
-            console.log('Database initialized successfully');
-        }
-    });
-}
-
 module.exports = {
-    initDatabase,
     validateQuery,
     selectOrInsert,
 }
