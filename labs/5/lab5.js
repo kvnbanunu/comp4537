@@ -53,6 +53,8 @@ db.connect((err) => {
             console.error('Failed to initialize database:', err);
             process.exit(1);
         }
+        console.log('Database initialized successfully');
+        server.listen(process.env.PORT);
     });
 });
 
@@ -168,8 +170,6 @@ function shutdown() {
 
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
-
-server.listen(process.env.PORT);
 
 // handle server err
 server.on('error', (error) => {
