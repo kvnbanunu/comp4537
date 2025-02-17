@@ -29,7 +29,7 @@ function createInsertQuery(personData) {
     return `INSERT INTO patient (name, dateOfBirth) VALUES ${values}`;
 }
 
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
             "Access-Control-Allow-Origin": "*",
@@ -45,7 +45,37 @@ http.createServer((req, res) => {
     let result = "";
     
     if (q.pathname === PATHS.base) {
-        if (req.method === "GET" || req.method === "POST") {
+        if (req.method === "GET") {
+            const sqlQuery = q.query.query;
+
+            if (!sqlQuery) {
+                resCode = RESCODE.badReq;
+                res.writeHead(resCode, {
+                    "Content-Type": contype,
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify({
+                    error: TEXT.noQuery
+                }));
+                return;
+            }
+
+            try {
+                const response = await db.executeQuery(sqlQuery);
+                res.writeHead(resCode, {
+                    "Content-Type": contype,
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify(response));
+            } catch (error) {
+                res.writeHead(resCode, {
+                    "Content-Type": contype,
+                    "Access-Control-Allow-Origin": "*"
+                });
+                res.end(JSON.stringify({ error: error.message }));
+            }
+            return;
+        } else if (req.method === "POST") {
             let data = '';
             req.on('data', chunk => {
                 data += chunk;
