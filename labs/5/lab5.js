@@ -1,17 +1,11 @@
 const http = require('http');
 const url = require('url');
-const mysql = require('mysql');
+const sqlite3 = require('sqlite3').verbose();
 const TEXT = require('./modules/text');
 const DBFUNC = require('./modules/database');
 require('dotenv').config();
 
 const PATH = '/sql';
-
-const CONTENT = {
-    json: "application/json",
-    html: "text/html",
-    text: "text/plain"
-}
 
 const RESCODE = {
     success: 200,
@@ -23,19 +17,13 @@ const RESCODE = {
     intErr: 500
 }
 
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE
-});
-
-db.connect((err) => {
+const db = new sqlite3.Database(process.env.DB_FILE || './database.sqlite', (err) => {
     if (err) {
-        console.error('Error connecting to MySQL:', err);
+        console.error('Error connecting to SQLite database:', err);
         return;
     }
-    console.log('Connected to MySQL database');
+    console.log('Connected to SQLite database');
+    DBFUNC.initDatabase();
 });
 
 const server = http.createServer(async (req, res) => {
@@ -81,12 +69,12 @@ function handleGetReq(req, res, query) {
         return;
     }
 
-    db.query(query.query, [], (err, result) => {
+    db.all(query.query, [], (err, rows) => {
         if (err) {
             sendError(res, RESCODE.intErr, TEXT.dbErr);
             return;
         }
-        sendJSON(res, RESCODE.success, result);
+        sendJSON(res, RESCODE.success, rows);
     });
 }
 
@@ -102,12 +90,18 @@ async function handlePostReq(req, res) {
         return;
     }
 
-    db.query(body.query, [], (err, result) => {
+    db.run(body.query, [], function(err) {
         if (err) {
             sendError(res, RESCODE.intErr, TEXT.dbErr);
             return;
         }
-        sendJSON(res, RESCODE.created, { message: TEXT.created, result });
+        sendJSON(res, RESCODE.created, { 
+            message: TEXT.created, 
+            result: { 
+                insertId: this.lastID,
+                affectedRows: this.changes 
+            }
+        });
     });
 }
 
@@ -142,7 +136,7 @@ function sendError(res, status, message) {
 
 function shutdown() {
     server.close(() => {
-        db.end(() => {
+        db.close(() => {
             process.exit(0);
         });
     });
