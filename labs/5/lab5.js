@@ -20,6 +20,15 @@ const RESCODE = {
     notFound: 404
 }
 
+// This function is used to parse the array sent from client
+function createInsertQuery(personData) {
+    const values = personData.map(person => 
+        `('${person.name}', '${person.date}')`
+    ).join(', ');
+
+    return `INSERT INTO patient (name, dateOfBirth) VALUES ${values}`;
+}
+
 http.createServer((req, res) => {
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
@@ -46,24 +55,24 @@ http.createServer((req, res) => {
                 try {
                     const reqData = JSON.parse(data);
                     let response;
+                    let query;
 
-                    if (req.method === "POST" && reqData.type === 'predefined') { // Handle the repeat query
-                        try {
-                            response = await db.insertPredefinedPatients();
-                        } catch (error) {
-                            response = { error: error.message };
-                            resCode = RESCODE.badReq;
-                        }
-                    } else if (reqData.query) { // Handle custom query
-                        try {
-                            response = await db.executeQuery(reqData.query);
-                        } catch (error) {
-                            response = { error: error.message };
-                            resCode = RESCODE.badReq;
-                        }
+                    if (req.method === "POST" && Array.isArray(reqData)) { // Handle the repeat query
+                        query = createInsertQuery(reqData);
+                    } else if (reqData.query){ // handle custom query
+                        query = reqData.query;
                     } else {
                         response = { error: TEXT.invReq };
                         resCode = RESCODE.badReq;
+                    }
+                    
+                    if (query) {
+                        try {
+                            response = await db.executeQuery(query);
+                        } catch (error) {
+                            response = { error: error.message };
+                            resCode = RESCODE.badReq;
+                        }
                     }
 
                     res.writeHead(resCode, {
