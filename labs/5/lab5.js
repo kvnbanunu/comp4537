@@ -33,10 +33,15 @@ const db = mysql.createConnection({
 db.connect((err) => {
     if (err) {
         console.error('Error connecting to MySQL:', err);
-        return;
+        process.exit(1);
     }
     console.log('Connected to MySQL database');
-    initDatabase();
+    initDatabase((err) => {
+        if (err) {
+            console.error('Failed to initialize database:', err);
+            process.exit(1);
+        }
+    });
 });
 
 const server = http.createServer(async (req, res) => {
@@ -74,18 +79,18 @@ const server = http.createServer(async (req, res) => {
 function initDatabase() {
     const sql = `
         CREATE TABLE IF NOT EXISTS patient (
-            patientid INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+            patientid INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
             dateOfBirth DATETIME NOT NULL
         )
     `;
-
-    db.query(sql, [], (err, result) => {
+    
+    db.query(sql, (err) => {
         if (err) {
-            sendError(res, RESCODE.intErr, TEXT.dbErr);
+            console.error('Error initializing database:', err);
             return;
         }
-        sendJSON(res, RESCODE.success, result);
+        console.log('Database initialized successfully');
     });
 }
 
